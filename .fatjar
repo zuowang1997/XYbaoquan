@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Wed Jun 15 14:44:56 CST 2016
+onejar.license.required=false
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=true
+jarname=F\:\\eclipse-standard-kepler-SR2-win32\\DataSecurity.jar
+manifest.mergeall=true
+manifest.mainclass=src.controller.main
+manifest.file=<createnew>
+jarname.isextern=true
+onejar.expand=
+excludes=
+includes=

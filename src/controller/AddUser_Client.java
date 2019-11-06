@@ -1,0 +1,239 @@
+package controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.sql.Date;
+import java.util.List;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+
+import library.MD5;
+import model.User;
+import model.SqlManager;
+
+public class AddUser_Client extends HttpServlet {
+
+	
+	//一些文件参数
+			private static final long serialVersionUID = 1L;
+		    
+		    // 上传文件存储目录
+		    private static final String UPLOAD_DIRECTORY = "upload";
+		 
+		    // 上传配置
+		    private static final int MEMORY_THRESHOLD   = 1024 * 1024 * 3;  // 3MB
+		    private static final int MAX_FILE_SIZE      = 1024 * 1024 * 40; // 40MB
+		    private static final int MAX_REQUEST_SIZE   = 1024 * 1024 * 50; // 50MB
+	
+
+	/**
+	 * Constructor of the object.
+	 */
+	public AddUser_Client() {
+		super();
+	}
+
+	/**
+	 * Destruction of the servlet. <br>
+	 */
+	public void destroy() {
+		super.destroy(); // Just puts "destroy" string in log
+		// Put your code here
+	}
+
+	/**
+	 * The doGet method of the servlet. <br>
+	 *
+	 * This method is called when a form has its tag value method equals to get.
+	 * 
+	 * @param request the request send by the client to the server
+	 * @param response the response send by the server to the client
+	 * @throws ServletException if an error occurred
+	 * @throws IOException if an error occurred
+	 */
+	public void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		doPost(request, response);
+	}
+
+	/**
+	 * The doPost method of the servlet. <br>
+	 *
+	 * This method is called when a form has its tag value method equals to post.
+	 * 
+	 * @param request the request send by the client to the server
+	 * @param response the response send by the server to the client
+	 * @throws ServletException if an error occurred
+	 * @throws IOException if an error occurred
+	 */
+	public void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		 User newUser = new User();
+	     
+		 
+		 String UserID = null;
+	     int UserAge = 0;
+	     String UserGender = null;
+	     String UserOccupation = null;
+	     String UserTelephone = null;
+	     String UserEmail = null;
+		 
+		 
+	        //接收表单参数
+		    boolean isMultipart = ServletFileUpload.isMultipartContent(request);  
+	   	    response.setContentType("text/html;charset=UTF-8");  
+	        if (isMultipart) {  
+	       	 HttpSession session = request.getSession();
+	            // Create a factory for disk-based file items  
+	            DiskFileItemFactory factory = new DiskFileItemFactory();  
+	            
+	            // 设置内存临界值 - 超过后将产生临时文件并存储于临时目录中
+	            factory.setSizeThreshold(MEMORY_THRESHOLD);
+	            // 设置临时存储目录
+	            factory.setRepository(new File(System.getProperty("java.io.tmpdir")));
+	     
+	            ServletFileUpload upload1 = new ServletFileUpload(factory);
+	             
+	            // 设置最大文件上传值
+	            upload1.setFileSizeMax(MAX_FILE_SIZE);
+	             
+	            // 设置最大请求值 (包含文件和表单数据)
+	            upload1.setSizeMax(MAX_REQUEST_SIZE);
+	            
+	            // Configure a repository (to ensure a secure temp location is used)  
+	            ServletContext servletContext = this.getServletConfig()  
+	                    .getServletContext();  
+	            File repository = (File) servletContext  
+	                    .getAttribute("javax.servlet.context.tempdir");  
+	            factory.setRepository(repository);  
+	            // Create a new file upload handler  
+	            ServletFileUpload upload = new ServletFileUpload(factory);  
+	            // Parse the request  
+	            try {  
+	                @SuppressWarnings("unchecked")
+					List<FileItem> items = upload.parseRequest(request);  
+	  
+	                Iterator<FileItem> iterator = items.iterator();  
+	  
+	                String dir = request.getSession().getServletContext()  
+	                        .getRealPath("/upload");  
+	                File dirFile = new File(dir);  
+	             // 如果目录不存在则创建
+	                if (!dirFile.exists()) {
+	               	 dirFile.mkdir();
+	                }  
+	                while (iterator.hasNext()) {  
+	                    FileItem fileItem = iterator.next(); 
+	                    if (fileItem.isFormField()) {// 如果是文本类型参数  
+	  
+	                   	 String name = fileItem.getFieldName();  
+	                        String value = fileItem.getString("UTF-8");  
+	                        System.out.println(name + "  " + value);  
+	                        session.setAttribute(name, value); 
+	                        
+	                    } 
+	                    else {  
+	                        // 如果是文件类型参数  
+	                   	 if (items != null && items.size() > 0) {
+	                            // 迭代表单数据
+	                            for (FileItem item : items) {
+	                                // 处理不在表单中的字段
+	                                if (!item.isFormField()) {
+	                                    String fileName = new File(item.getName()).getName();
+	                                    String filePath = dir + File.separator + fileName;
+	                                    File storeFile = new File(filePath);
+	                                    // 在控制台输出文件的上传路径
+	                                    System.out.println(filePath);
+	                                    // 保存文件到硬盘
+	                                    item.write(storeFile);
+	                                }
+	                            }
+	                        } 
+	                    }  
+	                }  
+	            } catch (FileUploadException e) {  
+	  
+	                e.printStackTrace();  
+	            } catch (Exception e) {  
+	  
+	                e.printStackTrace();  
+	            }  
+	  
+	        } else {  
+	            
+	        }  
+		 
+		 
+		 //得到参数
+	     UserID = String.valueOf(request.getSession().getAttribute("UserID"));
+	     UserAge = Integer.parseInt(request.getSession().getAttribute("UserAge").toString());
+	     UserGender = String.valueOf(request.getSession().getAttribute("UserGender"));
+	     UserOccupation = String.valueOf(request.getSession().getAttribute("UserOccupation"));
+	     UserTelephone = String.valueOf(request.getSession().getAttribute("UserTelephone"));
+	     UserEmail = String.valueOf(request.getSession().getAttribute("UserEmail"));
+     	
+     
+     	SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+     	Timestamp RegistrationTime = new Timestamp(System.currentTimeMillis()); 
+     	String UserLevel=String.valueOf(request.getSession().getAttribute("UserLevel"));
+     	String UserPassword=String.valueOf(request.getSession().getAttribute("UserPassword"));
+	     
+	  
+     	newUser.setUserID(UserID);
+     	newUser.setUserAge(UserAge);
+     	newUser.setUserGender(UserGender);
+     	newUser.setUserOccupation(UserOccupation);
+     	newUser.setUserTelephone(UserTelephone);
+     	newUser.setUserEmail(UserEmail);
+     	newUser.setRegistrationTime(RegistrationTime);
+     	newUser.setUserLevel(UserLevel);
+     	newUser.setUserPassword(UserPassword);
+	     
+	     
+	     
+	     SqlManager sql=new SqlManager();
+	     String res = sql.registor(newUser);
+	     if(res !="" ){
+	    	 System.out.println("Create a User Succ!");
+ 		     response.setCharacterEncoding("UTF_8");//设置Response的编码方式为UTF-8  
+       	     response.setHeader("Content-type","text/html;charset=UTF-8");
+       	     PrintWriter writer = response.getWriter();  
+       	     writer.write("seccess"); 
+	    	 
+		     return;
+	     }else if(res == ""){
+	    	 System.out.println("Create a User Failed!");
+	    	 response.setCharacterEncoding("UTF_8");//设置Response的编码方式为UTF-8  
+	       	 response.setHeader("Content-type","text/html;charset=UTF-8");
+	       	 PrintWriter writer = response.getWriter();  
+	       	 writer.write("fail"); 
+	    	 return;
+	     }
+	}
+
+	/**
+	 * Initialization of the servlet. <br>
+	 *
+	 * @throws ServletException if an error occurs
+	 */
+	public void init() throws ServletException {
+		// Put your code here
+	}
+
+}
